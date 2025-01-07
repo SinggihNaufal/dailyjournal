@@ -48,14 +48,13 @@ session_start();
 include "koneksi.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Mengambil input dari form login
     $username = $_POST['username'];
+    $password = md5($_POST['password']);  // Menggunakan md5 untuk password
 
-    // Menggunakan md5 untuk mencocokkan password di database
-    $password = md5($_POST['password']);
-
-    // Prepared statement untuk mengambil username dan role
-    $stmt = $conn->prepare("SELECT username, role FROM user WHERE username=? AND password=?");
-    $stmt->bind_param("ss", $username, $password); // username string, password string
+    // Prepared statement untuk mengambil username dan password yang sesuai
+    $stmt = $conn->prepare("SELECT username, role FROM users WHERE username=? AND password=?");
+    $stmt->bind_param("ss", $username, $password);  // Bind parameter: username dan password
 
     // Eksekusi statement
     $stmt->execute();
@@ -64,23 +63,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $hasil = $stmt->get_result();
     $row = $hasil->fetch_array(MYSQLI_ASSOC);
 
-    // Jika ada data yang cocok
+    // Jika data ditemukan dan username serta password cocok
     if (!empty($row)) {
         $_SESSION['username'] = $row['username'];
-        $_SESSION['role'] = $row['role'];
+        $_SESSION['role'] = $row['role'];  // Simpan role user di session
 
         // Memeriksa role dan mengarahkan ke halaman yang sesuai
         if ($row['role'] == 'admin') {
-            header("location:admin.php"); // Halaman admin
+            // Jika role adalah admin, arahkan ke halaman admin
+            header("location:admin.php"); 
         } elseif ($row['role'] == 'user') {
-            header("location:index.php"); // Halaman user biasa
+            // Jika role adalah user, arahkan ke halaman index
+            header("location:index.php"); 
         } else {
-            // Jika role tidak dikenali, kembali ke login
+            // Jika role tidak dikenali, kembalikan ke login
             header("location:login.php");
         }
     } else {
-        // Jika login gagal
-        header("location:login.php");
+        // Jika login gagal (username atau password salah)
+        $_SESSION['error'] = "Username atau password salah!";
+        header("location:login.php"); // Kembali ke halaman login
     }
 
     // Menutup statement dan koneksi database

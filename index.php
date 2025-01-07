@@ -238,30 +238,23 @@ include "koneksi.php";
   <section id="gallery" class="container my-5">
     <h2 class="text-center">Gallery</h2>
     <div class="row">
-      <div class="col-md-4">
-        <img
-          src="image/Galeri1.jpg"
-          width="350"
-          height="150"
-          class="img-fluid mb-3"
-          alt="Gallery Image 1" />
-      </div>
-      <div class="col-md-4">
-        <img
-          src="image/Galeri2.jpg"
-          width="350"
-          height="150"
-          class="img-fluid mb-3"
-          alt="Gallery Image 2" />
-      </div>
-      <div class="col-md-4">
-        <img
-          src="image/Galeri3.jpg"
-          width="350"
-          height="150"
-          class="img-fluid mb-3"
-          alt="Gallery Image 3" />
-      </div>
+      <?php
+      include "koneksi.php";
+
+      $query = "SELECT * FROM gallery";
+      $result = mysqli_query($conn, $query);
+
+      while ($row = mysqli_fetch_assoc($result)) : ?>
+        <div class="col-md-4">
+          <img
+            src="image/<?= htmlspecialchars($row['image']) ?>"
+            width="350"
+            height="150"
+            class="img-fluid mb-3"
+            alt="<?= htmlspecialchars($row['title']) ?>" />
+          <p class="text-center"><?= htmlspecialchars($row['title']) ?></p>
+        </div>
+      <?php endwhile; ?>
     </div>
   </section>
 
