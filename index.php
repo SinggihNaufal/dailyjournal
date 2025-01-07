@@ -135,7 +135,7 @@ include "koneksi.php";
         <p>Temukan karya unik yang membawa imajinasi anda melampui batas</p>
       </div>
       <img
-        src="image/gambar1.png"
+        src="img/gambar1.png"
         width="300"
         height="300"
         alt="Hero Image" />
@@ -159,7 +159,7 @@ include "koneksi.php";
       <div class="carousel-inner">
         <div class="carousel-item active">
           <img
-            src="image/gambar2.jpg"
+            src="img/gambar2.jpg"
             width="1200"
             height="600"
             class="d-block w-100"
@@ -167,7 +167,7 @@ include "koneksi.php";
         </div>
         <div class="carousel-item">
           <img
-            src="image/gambar3.jpg"
+            src="img/gambar3.jpg"
             width="1200"
             height="600"
             class="d-block w-100"
@@ -175,7 +175,7 @@ include "koneksi.php";
         </div>
         <div class="carousel-item">
           <img
-            src="image/gambar4.jpg"
+            src="img/gambar4.jpg"
             width="1200"
             height="600"
             class="d-block w-100"
@@ -247,7 +247,7 @@ include "koneksi.php";
       while ($row = mysqli_fetch_assoc($result)) : ?>
         <div class="col-md-4">
           <img
-            src="image/<?= htmlspecialchars($row['image']) ?>"
+            src="img/<?= htmlspecialchars($row['image']) ?>"
             width="350"
             height="150"
             class="img-fluid mb-3"
@@ -320,7 +320,7 @@ include "koneksi.php";
     <div class="row align-items-center">
       <div class="col-md-4 text-center mb-4 mb-md-0">
         <img
-          src="image/Untitled-1klh.jpg"
+          src="img/Untitled-1klh.jpg"
           alt="Foto Mahasiswa"
           class="profile-photo img-fluid rounded rounded-circle" />
       </div>

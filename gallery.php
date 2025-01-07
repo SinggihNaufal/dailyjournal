@@ -10,8 +10,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($action == 'add') {
             $title = mysqli_real_escape_string($conn, $_POST['title']);
             $image = $_FILES['image']['name'];
-            $target = "image/" . basename($image);
+            $target = __DIR__ . "/img/" . basename($image);
 
+            // Validate File Type
+            $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+            $file_type = mime_content_type($_FILES['image']['tmp_name']);
+            if (!in_array($file_type, $allowed_types)) {
+                die("Invalid file type. Only JPG, PNG, and GIF are allowed.");
+            }
+
+            // Move Uploaded File
             if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
                 $query = "INSERT INTO gallery (title, image) VALUES ('$title', '$image')";
                 mysqli_query($conn, $query);
@@ -23,9 +31,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $id = intval($_POST['id']);
             $title = mysqli_real_escape_string($conn, $_POST['title']);
             $image = $_FILES['image']['name'];
-            $target = "image/" . basename($image);
+            $target = __DIR__ . "/img/" . basename($image);
 
+            // Update Image if Provided
             if (!empty($image)) {
+                // Validate File Type
+                $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+                $file_type = mime_content_type($_FILES['image']['tmp_name']);
+                if (!in_array($file_type, $allowed_types)) {
+                    die("Invalid file type. Only JPG, PNG, and GIF are allowed.");
+                }
+
                 move_uploaded_file($_FILES['image']['tmp_name'], $target);
                 $query = "UPDATE gallery SET title='$title', image='$image' WHERE id=$id";
             } else {
@@ -79,7 +95,9 @@ $total_pages = ceil($total_items / $items_per_page);
                 <tr>
                     <td><?= $no++ ?></td>
                     <td><?= htmlspecialchars($row['title']) ?></td>
-                    <td><img src="image/<?= htmlspecialchars($row['image']) ?>" width="100" alt=""></td>
+                    <td>
+                        <img src="img/<?= htmlspecialchars($row['image']) ?>" width="100" onerror="this.src='img/default.png'" alt="">
+                    </td>
                     <td>
                         <button
                             class="btn btn-primary btn-sm"
@@ -110,7 +128,7 @@ $total_pages = ceil($total_items / $items_per_page);
                                     <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                     <div class="mb-3">
                                         <label for="title" class="form-label">Judul</label>
-                                        <input type="text" name="title" class="form-control" value="<?= $row['title'] ?>" required>
+                                        <input type="text" name="title" class="form-control" value="<?= htmlspecialchars($row['title']) ?>" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="image" class="form-label">Gambar</label>

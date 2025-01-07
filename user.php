@@ -8,33 +8,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Add User
         if ($action == 'add') {
-            $username = mysqli_real_escape_string($conn, $_POST['username']);
+            $username = trim($_POST['username']);
             $password = md5($_POST['password']);
-            $role = mysqli_real_escape_string($conn, $_POST['role']);
+            $role = trim($_POST['role']);
             $photo = $_FILES['photo']['name'];
-            $target = "image/" . basename($photo);
+            $target = __DIR__ . "/img/" . basename($photo);
 
-            if (move_uploaded_file($_FILES['photo']['tmp_name'], $target)) {
-                $query = "INSERT INTO users (username, password, role, photo) VALUES ('$username', '$password', '$role', '$photo')";
-                mysqli_query($conn, $query);
+            if (empty($username) || empty($password) || empty($role)) {
+                die("All fields are required.");
+            }
+
+            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+                $file_type = mime_content_type($_FILES['photo']['tmp_name']);
+
+                if (in_array($file_type, $allowed_types)) {
+                    if (move_uploaded_file($_FILES['photo']['tmp_name'], $target)) {
+                        $stmt = $conn->prepare("INSERT INTO users (username, password, role, photo) VALUES (?, ?, ?, ?)");
+                        $stmt->bind_param("ssss", $username, $password, $role, $photo);
+                        $stmt->execute();
+                        $stmt->close();
+                    } else {
+                        die("Failed to upload the file.");
+                    }
+                } else {
+                    die("Invalid file type. Only JPG, PNG, and GIF are allowed.");
+                }
+            } else {
+                die("No file uploaded or upload error.");
             }
         }
 
         // Edit User
         if ($action == 'edit') {
             $id = intval($_POST['id']);
-            $username = mysqli_real_escape_string($conn, $_POST['username']);
-            $role = mysqli_real_escape_string($conn, $_POST['role']);
+            $username = trim($_POST['username']);
+            $role = trim($_POST['role']);
             $photo = $_FILES['photo']['name'];
-            $target = "image/" . basename($photo);
+            $target = __DIR__ . "/img/" . basename($photo);
+
+            if (empty($username) || empty($role)) {
+                die("All fields are required.");
+            }
 
             if (!empty($photo)) {
-                move_uploaded_file($_FILES['photo']['tmp_name'], $target);
-                $query = "UPDATE users SET username='$username', role='$role', photo='$photo' WHERE id=$id";
+                if (move_uploaded_file($_FILES['photo']['tmp_name'], $target)) {
+                    $stmt = $conn->prepare("UPDATE users SET username=?, role=?, photo=? WHERE id=?");
+                    $stmt->bind_param("sssi", $username, $role, $photo, $id);
+                } else {
+                    die("Failed to upload the file.");
+                }
             } else {
-                $query = "UPDATE users SET username='$username', role='$role' WHERE id=$id";
+                $stmt = $conn->prepare("UPDATE users SET username=?, role=? WHERE id=?");
+                $stmt->bind_param("ssi", $username, $role, $id);
             }
-            mysqli_query($conn, $query);
+            $stmt->execute();
+            $stmt->close();
         }
     }
 }
@@ -42,19 +71,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 // Handle Delete Request
 if (isset($_GET['delete_id'])) {
     $id = intval($_GET['delete_id']);
-    $query = "DELETE FROM users WHERE id=$id";
-    mysqli_query($conn, $query);
+    $stmt = $conn->prepare("DELETE FROM users WHERE id=?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
     header("Location: admin.php?page=user");
     exit();
 }
 
 // Pagination Logic
 $items_per_page = 4;
-$current_page = isset($_GET['page_number']) ? intval($_GET['page_number']) : 1;
+$current_page = isset($_GET['page_number']) ? max(1, intval($_GET['page_number'])) : 1;
 $offset = ($current_page - 1) * $items_per_page;
 
-$query = "SELECT * FROM users LIMIT $offset, $items_per_page";
-$result = mysqli_query($conn, $query);
+$stmt = $conn->prepare("SELECT * FROM users LIMIT ?, ?");
+$stmt->bind_param("ii", $offset, $items_per_page);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $total_query = "SELECT COUNT(*) AS total FROM users";
 $total_result = mysqli_query($conn, $total_query);
@@ -78,14 +111,14 @@ $total_pages = ceil($total_items / $items_per_page);
         </thead>
         <tbody>
             <?php $no = $offset + 1; ?>
-            <?php while ($row = mysqli_fetch_assoc($result)): ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
                 <tr>
                     <td><?= $no++ ?></td>
                     <td><?= htmlspecialchars($row['username']) ?></td>
                     <td><?= htmlspecialchars($row['role']) ?></td>
                     <td>
                         <?php if ($row['photo']): ?>
-                            <img src="image/<?= htmlspecialchars($row['photo']) ?>" width="50" height="50">
+                            <img src="img/<?= htmlspecialchars($row['photo']) ?>" width="50" height="50" onerror="this.src='img/default.png'">
                         <?php endif; ?>
                     </td>
                     <td>
@@ -108,7 +141,7 @@ $total_pages = ceil($total_items / $items_per_page);
                                     <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                     <div class="mb-3">
                                         <label>Username</label>
-                                        <input type="text" name="username" class="form-control" value="<?= $row['username'] ?>" required>
+                                        <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($row['username']) ?>" required>
                                     </div>
                                     <div class="mb-3">
                                         <label>Role</label>
@@ -183,4 +216,3 @@ $total_pages = ceil($total_items / $items_per_page);
         </div>
     </div>
 </div>
-
